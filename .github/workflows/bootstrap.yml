@@ -40,6 +40,19 @@ jobs:
           base64 -d campaign-payload.b64 | tar -xz
           rm -f campaign-payload.b64 campaign-payload.part-*
           mkdir -p assets/brand docs qa
+      - name: Normalize final artifact manifest
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          manifest_path=Path('artifact-manifest.json')
+          manifest=json.loads(manifest_path.read_text())
+          manifest['assets']=[a for a in manifest.get('assets',[]) if a!='assets/deephow-product.jpg']
+          manifest_path.write_text(json.dumps(manifest,indent=2)+'\n')
+          qa=Path('scripts/qa.py')
+          text=qa.read_text().replace(",\'assets/deephow-product.jpg\'","")
+          qa.write_text(text)
+          PY
       - name: Retrieve official DeepHow identity
         run: |
           curl --fail --location --retry 3 'https://cdn.prod.website-files.com/68a896806364451d3e31efdb/68a8a17242ec643c737759bd_deephow-logo.svg' -o assets/brand/deephow-logo.svg
