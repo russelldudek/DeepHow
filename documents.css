@@ -1,4 +1,8 @@
 /* Resume and cover-letter composition only. */
+.document-toolbar a[href="interview-brief.html"],
+.document-toolbar a[href="120-day-plan.html"],
+.document-toolbar a[href="work-address-review.html"],
+.document-toolbar .group:last-child a:not([download]){display:none}
 .resume-proof-section{margin-top:14px}
 .resume-proof-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .resume-proof{break-inside:avoid;border:1px solid #cbd6e2;border-top:3px solid var(--dh-blue);background:#f7f9fc;padding:10px 11px}
