@@ -30,12 +30,17 @@ async def run():
         broken=[i for i in data['images'] if i['complete'] and i['naturalWidth']==0]
         results.append({'viewport':label,'route':route,'status':response.status if response else None,'overflow':data['scrollWidth']>data['clientWidth']+1,'broken_images':broken,'title':data['title']})
         if route=='index.html':
+          await page.wait_for_function("document.querySelector('#work-coordinate')?.dataset.phase === 'resolved'",timeout=4500)
+          structural=await page.evaluate("""() => ({sources:document.querySelectorAll('.work-source').length,coordinates:document.querySelectorAll('.address-coordinate').length,packets:document.querySelectorAll('.resolution-packet').length,returns:document.querySelectorAll('.learning-return').length,legacy:document.querySelectorAll('.gantry,.crosshead,.scan-line').length,active:document.querySelector('.work-source[aria-current=\"true\"]')?.dataset.source||''})""")
+          results.append({'viewport':label,'animation-structure':structural,'passed':structural=={'sources':4,'coordinates':5,'packets':1,'returns':1,'legacy':0,'active':'knowledge'}})
           await page.screenshot(path=str(qa/f'homepage-{label}.png'),full_page=True)
           cases=[('output','Operational Output Verification'),('live','Live SOP Verification'),('motion','Time & Motion AI')]
           for key,expected in cases:
             await page.locator(f'[data-scenario="{key}"]').click()
             got=(await page.locator('#surface-value').inner_text()).strip()
-            results.append({'viewport':label,'interaction':key,'passed':got==expected,'actual':got})
+            active=await page.locator('.work-source[aria-current="true"]').get_attribute('data-source')
+            phase=await page.locator('#work-coordinate').get_attribute('data-phase')
+            results.append({'viewport':label,'interaction':key,'passed':got==expected and active==key and phase=='resolving','actual':got,'active':active,'phase':phase})
           await page.locator('#reset-scenario').click()
           got=(await page.locator('#surface-value').inner_text()).strip()
           results.append({'viewport':label,'interaction':'reset','passed':got=='Knowledge Capture & Transfer','actual':got})
@@ -47,8 +52,8 @@ async def run():
       await page.close()
     reduced=await browser.new_page(viewport={'width':1280,'height':800},reduced_motion='reduce')
     await reduced.goto('http://127.0.0.1:8765/index.html',wait_until='networkidle')
-    duration=await reduced.locator('.crosshead').evaluate('el=>getComputedStyle(el).animationDuration')
-    results.append({'viewport':'reduced-motion','animation_duration':duration,'passed':duration in ['0.001ms','0.001s','0s','1e-06s']})
+    reduced_state=await reduced.evaluate("""() => ({phase:document.querySelector('#work-coordinate')?.dataset.phase||'',packet:getComputedStyle(document.querySelector('.resolution-packet')).display,coordinates:document.querySelectorAll('.address-coordinate').length})""")
+    results.append({'viewport':'reduced-motion','state':reduced_state,'passed':reduced_state=={'phase':'resolved','packet':'none','coordinates':5}})
     await reduced.close();await browser.close()
 asyncio.run(run())
 server.terminate();server.wait(timeout=5)
