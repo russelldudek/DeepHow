@@ -17,42 +17,91 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - name: Inspect or enable GitHub Pages
+      - uses: actions/checkout@v4
+      - name: Inspect GitHub Pages
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          set +e
-          gh api "repos/${GITHUB_REPOSITORY}/pages" > pages-before.json 2>pages-before.err
-          before=$?
-          set -e
-          if [ "$before" -ne 0 ]; then
-            gh api --method POST "repos/${GITHUB_REPOSITORY}/pages" -f build_type=workflow > pages-create.json
-          fi
           gh api "repos/${GITHUB_REPOSITORY}/pages" > pages-state.json
           cat pages-state.json
-      - name: Probe candidate-vision URL
+      - name: Wait for marker-free release
         run: |
-          set +e
-          curl --location --silent --show-error --max-time 30 \
-            --dump-header live-headers.txt \
-            --output live-index.html \
-            "https://russelldudek.github.io/DeepHow/"
-          echo "$?" > live-curl-status.txt
-          set -e
-          cat live-headers.txt || true
-      - name: Upload Pages diagnostic
+          base='https://russelldudek.github.io/DeepHow'
+          for attempt in $(seq 1 12); do
+            curl --fail --location --silent --show-error "$base/app.js?audit=$GITHUB_RUN_ID-$attempt" -o live-app.js
+            if grep -q 'resolverRefinement' live-app.js && grep -q 'content:none!important;display:none!important' live-app.js; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo 'Marker-removal release did not reach Pages in time.' >&2
+          exit 1
+      - name: Install browser audit dependency
+        run: pip3 install --break-system-packages playwright
+      - name: Verify live marker removal in Chrome
+        run: |
+          cat > live_marker_audit.py <<'PY'
+          import asyncio, json, shutil
+          from playwright.async_api import async_playwright
+
+          BROWSER = next((shutil.which(x) for x in ['google-chrome-stable','google-chrome','chromium','chromium-browser'] if shutil.which(x)), None)
+          if not BROWSER:
+              raise SystemExit('No installed browser available')
+
+          async def main():
+              async with async_playwright() as p:
+                  browser = await p.chromium.launch(headless=True, executable_path=BROWSER, args=['--no-sandbox','--disable-dev-shm-usage'])
+                  page = await browser.new_page(viewport={'width':1280,'height':800})
+                  errors=[]
+                  page.on('pageerror', lambda error: errors.append(str(error)))
+                  await page.goto('https://russelldudek.github.io/DeepHow/?marker-audit=1', wait_until='networkidle')
+                  await page.wait_for_timeout(250)
+                  async def state():
+                      return await page.evaluate('''() => {
+                        const active=document.querySelector('.work-source[aria-current="true"]');
+                        const before=getComputedStyle(active,'::before');
+                        const after=getComputedStyle(active,'::after');
+                        return {
+                          source:active?.dataset.source||'',
+                          beforeDisplay:before.display,
+                          afterDisplay:after.display,
+                          beforeContent:before.content,
+                          afterContent:after.content,
+                          signal:document.querySelector('.signal-label')?.textContent.trim()||'',
+                          learning:document.querySelector('.return-label')?.textContent.trim()||''
+                        };
+                      }''')
+                  kct=await state()
+                  await page.locator('button[data-scenario="output"]').click()
+                  await page.wait_for_timeout(150)
+                  oov=await state()
+                  await page.screenshot(path='live-marker-free.png', full_page=False)
+                  await browser.close()
+                  checks={
+                    'no_browser_errors':not errors,
+                    'kct_markers_removed':kct['beforeDisplay']=='none' and kct['afterDisplay']=='none',
+                    'oov_markers_removed':oov['beforeDisplay']=='none' and oov['afterDisplay']=='none',
+                    'kct_arrows_retained':kct['signal']=='KCT to platform' and kct['learning']=='Learning back to KCT',
+                    'oov_arrows_retained':oov['signal']=='OOV to platform' and oov['learning']=='Learning back to OOV'
+                  }
+                  record={'status':'passed' if all(checks.values()) else 'failed','checks':checks,'errors':errors,'kct':kct,'oov':oov}
+                  open('live-marker-audit.json','w').write(json.dumps(record,indent=2))
+                  print(json.dumps(record,indent=2))
+                  if record['status']!='passed':
+                      raise SystemExit(1)
+          asyncio.run(main())
+          PY
+          python3 live_marker_audit.py
+      - name: Upload live marker audit
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: deephow-pages-diagnostic
+          name: deephow-marker-removal-live-audit
           path: |
-            pages-before.json
-            pages-before.err
-            pages-create.json
             pages-state.json
-            live-headers.txt
-            live-index.html
-            live-curl-status.txt
+            live-app.js
+            live-marker-audit.json
+            live-marker-free.png
           if-no-files-found: warn
   deploy:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
