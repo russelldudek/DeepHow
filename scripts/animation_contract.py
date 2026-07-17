@@ -21,17 +21,20 @@ GEOMETRY_JS = '''() => {
   const active = document.querySelector('.work-source[aria-current="true"]');
   const signal = document.querySelector('.signal-line');
   const learning = document.querySelector('.return-line');
-  if (!active || !signal || !learning) return {difference:999, signalLabel:'', returnLabel:'', activeState:''};
+  if (!active || !signal || !learning) return {difference:999, signalLabel:'', returnLabel:'', activeState:'', markersRemoved:false};
   const a = active.getBoundingClientRect();
   const s = signal.getBoundingClientRect();
   const r = learning.getBoundingClientRect();
   const activeCenter = a.top + a.height / 2;
   const loopCenter = ((s.top + s.height / 2) + (r.top + r.height / 2)) / 2;
+  const before = getComputedStyle(active, '::before');
+  const after = getComputedStyle(active, '::after');
   return {
     difference: Math.abs(activeCenter - loopCenter),
     signalLabel: document.querySelector('.signal-label')?.textContent.trim() || '',
     returnLabel: document.querySelector('.return-label')?.textContent.trim() || '',
-    activeState: active.querySelector('.source-state')?.textContent.trim() || ''
+    activeState: active.querySelector('.source-state')?.textContent.trim() || '',
+    markersRemoved: before.display === 'none' && after.display === 'none'
   };
 }'''
 
@@ -90,9 +93,11 @@ async def main():
       'legacy_gantry_removed': normal['structural']['legacy'] == 0,
       'initial_sequence_starts': normal['initial_phase'] == 'resolving',
       'initial_loop_aligned_to_kct': normal['initial_geometry']['difference'] <= 3 and normal['initial_geometry']['signalLabel'] == 'KCT to platform' and normal['initial_geometry']['returnLabel'] == 'Learning back to KCT' and normal['initial_geometry']['activeState'] == 'Active loop',
+      'initial_source_marker_removed': normal['initial_geometry']['markersRemoved'],
       'initial_sequence_settles': normal['settled']['phase'] == 'resolved' and normal['settled']['active'] == 'knowledge',
       'scenario_replays_once': normal['replay']['phase'] == 'resolving' and normal['replay']['active'] == 'output' and normal['replay']['iterations'] == '1',
       'output_loop_moves_to_oov': normal['replay_geometry']['difference'] <= 3 and normal['replay_geometry']['signalLabel'] == 'OOV to platform' and normal['replay_geometry']['returnLabel'] == 'Learning back to OOV' and normal['replay_geometry']['activeState'] == 'Active loop',
+      'output_source_marker_removed': normal['replay_geometry']['markersRemoved'],
       'scenario_settles': normal['replay_settled']['phase'] == 'resolved' and normal['replay_settled']['active'] == 'output',
       'scenario_updates_uri': normal['replay']['uri'] == 'WORK://OUTPUT-VERIFY/LOT-118/V1',
       'reduced_motion_resolves_immediately': reduced['initial_phase'] == 'resolved' and reduced['structural']['active'] == 'knowledge',
