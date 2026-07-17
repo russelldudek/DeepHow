@@ -10,7 +10,7 @@ permissions:
   pages: write
   id-token: write
 concurrency:
-  group: deephow-publication
+  group: deephow-publication-${{ github.event_name }}
   cancel-in-progress: false
 jobs:
   diagnostic:
@@ -26,13 +26,10 @@ jobs:
           test -s /tmp/manifest.txt
           grep -q './index.html' /tmp/manifest.txt
           grep -q './scripts/qa.py' /tmp/manifest.txt
-  publish:
+  build:
     if: github.event_name == 'pull_request' && github.head_ref == 'publication-diagnostic'
     needs: diagnostic
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -64,6 +61,14 @@ jobs:
           git add -A
           git commit -m '[generated] Publish verified DeepHow candidate campaign'
           git push origin main
+  deploy:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
       - name: Upload Pages artifact
