@@ -1,0 +1,28 @@
+/* Resume and cover-letter composition only. */
+.resume-proof-section{margin-top:14px}
+.resume-proof-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.resume-proof{break-inside:avoid;border:1px solid #cbd6e2;border-top:3px solid var(--dh-blue);background:#f7f9fc;padding:10px 11px}
+.resume-proof strong{display:block;margin-bottom:5px;color:var(--dh-blue-deep);font-size:9.2px;line-height:1.2;letter-spacing:.065em;text-transform:uppercase}
+.resume-proof p{margin:0;font-size:9.2px;line-height:1.38;color:#344256}
+.resume-toolkit-band,.resume-throughline{margin-top:13px}
+.resume-toolkit-band p,.resume-throughline p{font-size:9.7px;line-height:1.42}
+.cover-document .letter-body a{color:var(--dh-blue-deep);text-decoration:none;border-bottom:1px solid #9fc2f5}
+
+@media(max-width:800px){
+  .resume-proof-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:420px){
+  .resume-proof-grid{grid-template-columns:1fr}
+}
+
+@media print{
+  .resume-document .resume-proof-section{margin-top:16px}
+  .resume-document .resume-proof{padding:11px 12px}
+  .resume-document .resume-proof strong{font-size:9.8px}
+  .resume-document .resume-proof p{font-size:9.7px;line-height:1.42}
+  .resume-document .resume-toolkit-band,.resume-document .resume-throughline{margin-top:14px}
+  .resume-document .resume-toolkit-band p,.resume-document .resume-throughline p{font-size:10.2px;line-height:1.43}
+  .cover-document .letter-body{margin-top:21px}
+  .cover-document .letter-body p{font-size:11.7px;line-height:1.5;margin-bottom:11px}
+  .cover-document .signature{margin-top:16px}
+}
