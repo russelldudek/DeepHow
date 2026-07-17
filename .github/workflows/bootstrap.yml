@@ -52,6 +52,7 @@ jobs:
           qa=Path('scripts/qa.py')
           text=qa.read_text().replace(",\'assets/deephow-product.jpg\'","")
           qa.write_text(text)
+          print([line for line in text.splitlines() if line.startswith('required=')][0])
           PY
       - name: Retrieve official DeepHow identity
         run: |
@@ -62,11 +63,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y poppler-utils libpango-1.0-0 libharfbuzz0b libpangoft2-1.0-0
           pip3 install --break-system-packages weasyprint pypdf pillow beautifulsoup4 playwright
-      - name: Generate PDFs and run QA
-        run: |
-          python3 scripts/build_pdfs.py
-          python3 scripts/qa.py
-          python3 scripts/browser_qa.py
+      - name: Generate and validate PDFs
+        run: python3 scripts/build_pdfs.py
+      - name: Validate source and evidence integrity
+        run: python3 scripts/qa.py
+      - name: Validate responsive browser experience
+        run: python3 scripts/browser_qa.py
       - name: Commit complete campaign to main
         run: |
           git config user.name 'candidate-campaign-bot'
