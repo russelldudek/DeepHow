@@ -44,7 +44,7 @@ async def run():
           await page.locator('#reset-scenario').click()
           got=(await page.locator('#surface-value').inner_text()).strip()
           results.append({'viewport':label,'interaction':'reset','passed':got=='Knowledge Capture & Transfer','actual':got})
-          await page.locator('[data-scenario="knowledge"]').focus()
+          await page.locator('.scenario-tab[data-scenario="knowledge"]').focus()
           await page.keyboard.press('ArrowRight')
           got=(await page.locator('#surface-value').inner_text()).strip()
           results.append({'viewport':label,'interaction':'keyboard','passed':got=='Operational Output Verification','actual':got})
