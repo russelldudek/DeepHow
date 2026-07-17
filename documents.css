@@ -17,6 +17,7 @@
 }
 
 @media print{
+  .resume-document .resume-page-label{display:none}
   .resume-document .resume-proof-section{margin-top:16px}
   .resume-document .resume-proof{padding:11px 12px}
   .resume-document .resume-proof strong{font-size:9.8px}
