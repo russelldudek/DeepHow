@@ -39,6 +39,10 @@ function setScenario(key,focus=false){
   if(focus)document.getElementById('surface-value')?.focus();
 }
 document.addEventListener('DOMContentLoaded',()=>{
+  const proofImage=document.querySelector('.proof-photo img');
+  const removeBrokenProof=()=>{if(proofImage?.complete&&proofImage.naturalWidth===0){const figure=proofImage.closest('.proof-photo');figure?.parentElement?.classList.add('single-column');figure?.remove();}};
+  proofImage?.addEventListener('error',removeBrokenProof,{once:true});
+  removeBrokenProof();
   const toggle=document.querySelector('.mobile-toggle'),links=document.getElementById('site-links');
   toggle?.addEventListener('click',()=>{const open=toggle.getAttribute('aria-expanded')==='true';toggle.setAttribute('aria-expanded',String(!open));links?.classList.toggle('open',!open)});
   document.querySelectorAll('.scenario-tab').forEach((button,index,buttons)=>{
