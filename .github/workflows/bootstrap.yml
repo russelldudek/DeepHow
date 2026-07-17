@@ -17,42 +17,52 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - name: Inspect or enable GitHub Pages
+      - uses: actions/checkout@v4
+      - name: Inspect GitHub Pages
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          set +e
-          gh api "repos/${GITHUB_REPOSITORY}/pages" > pages-before.json 2>pages-before.err
-          before=$?
-          set -e
-          if [ "$before" -ne 0 ]; then
-            gh api --method POST "repos/${GITHUB_REPOSITORY}/pages" -f build_type=workflow > pages-create.json
-          fi
           gh api "repos/${GITHUB_REPOSITORY}/pages" > pages-state.json
           cat pages-state.json
-      - name: Probe candidate-vision URL
+      - name: Retrieve live application documents
         run: |
-          set +e
-          curl --location --silent --show-error --max-time 30 \
-            --dump-header live-headers.txt \
-            --output live-index.html \
-            "https://russelldudek.github.io/DeepHow/"
-          echo "$?" > live-curl-status.txt
-          set -e
-          cat live-headers.txt || true
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+          base='https://russelldudek.github.io/DeepHow'
+          for path in \
+            resume.html \
+            cover-letter.html \
+            docs/Russell-Dudek-DeepHow-Resume.pdf \
+            docs/Russell-Dudek-DeepHow-Cover-Letter.pdf
+          do
+            mkdir -p "live/$(dirname "$path")"
+            curl --fail --location --silent --show-error --retry 8 --retry-delay 5 --max-time 60 \
+              "$base/$path" -o "live/$path"
+          done
+      - name: Verify live document release
+        run: |
+          cmp resume.html live/resume.html
+          cmp cover-letter.html live/cover-letter.html
+          cmp docs/Russell-Dudek-DeepHow-Resume.pdf live/docs/Russell-Dudek-DeepHow-Resume.pdf
+          cmp docs/Russell-Dudek-DeepHow-Cover-Letter.pdf live/docs/Russell-Dudek-DeepHow-Cover-Letter.pdf
+          grep -q 'russelldudek.github.io/DeepHow/' live/cover-letter.html
+          grep -q 'Work Address Resolver' live/cover-letter.html
+          test "$(pdfinfo live/docs/Russell-Dudek-DeepHow-Resume.pdf | awk '/^Pages:/ {print $2}')" = '2'
+          test "$(pdfinfo live/docs/Russell-Dudek-DeepHow-Cover-Letter.pdf | awk '/^Pages:/ {print $2}')" = '1'
+          sha256sum resume.html live/resume.html cover-letter.html live/cover-letter.html \
+            docs/Russell-Dudek-DeepHow-Resume.pdf live/docs/Russell-Dudek-DeepHow-Resume.pdf \
+            docs/Russell-Dudek-DeepHow-Cover-Letter.pdf live/docs/Russell-Dudek-DeepHow-Cover-Letter.pdf \
+            > live-document-sha256.txt
+          cat live-document-sha256.txt
       - name: Upload Pages diagnostic
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: deephow-pages-diagnostic
+          name: deephow-application-document-live-audit
           path: |
-            pages-before.json
-            pages-before.err
-            pages-create.json
             pages-state.json
-            live-headers.txt
-            live-index.html
-            live-curl-status.txt
+            live/
+            live-document-sha256.txt
           if-no-files-found: warn
   deploy:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
