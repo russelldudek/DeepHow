@@ -1,1 +1,1 @@
-Validate the staged payload, normalize the final artifact manifest, build and QA every campaign artifact, publish to main, then deploy Pages from the main branch.
+Run the campaign through separate PDF, source-integrity, and responsive-browser validation gates before publishing to main.
