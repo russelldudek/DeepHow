@@ -2,7 +2,7 @@ from pathlib import Path
 from weasyprint import HTML
 from pypdf import PdfReader
 from PIL import Image
-import subprocess, shutil, tempfile
+import subprocess, shutil, tempfile, json
 
 root=Path(__file__).resolve().parents[1]
 out=root/'docs'; out.mkdir(exist_ok=True)
@@ -15,29 +15,40 @@ items=[
  ('work-address-review.html','Russell-Dudek-DeepHow-Work-Address-Review.pdf',2,None),
 ]
 render_record={}
-for html,name,pages,render_slug in items:
+errors=[]
+for html,name,expected_pages,render_slug in items:
     dest=out/name
     HTML(filename=str(root/html),base_url=str(root)).write_pdf(str(dest))
     reader=PdfReader(str(dest))
     actual=len(reader.pages)
-    if actual!=pages:
-        raise SystemExit(f'{name}: expected {pages}, got {actual}')
     text=' '.join((p.extract_text() or '') for p in reader.pages)
-    if len(text)<700:
-        raise SystemExit(f'{name}: suspiciously little extracted text ({len(text)})')
     with tempfile.TemporaryDirectory() as td:
         prefix=Path(td)/'page'
         subprocess.run(['pdftoppm','-png','-r','150',str(dest),str(prefix)],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
         ratios=[]
-        for page_number,png in enumerate(sorted(Path(td).glob('page-*.png')),start=1):
+        rendered_pages=sorted(Path(td).glob('page-*.png'))
+        for page_number,png in enumerate(rendered_pages,start=1):
             im=Image.open(png).convert('L')
             hist=im.histogram()
             nonwhite=sum(hist[:246])/(im.width*im.height)
             ratios.append(round(nonwhite,4))
             if render_slug:
                 shutil.copy2(png,qa/f'{render_slug}-page-{page_number}.png')
-        if len(ratios)!=pages or min(ratios)<0.025:
-            raise SystemExit(f'{name}: rendered page appears blank or missing {ratios}')
-        render_record[name]={'pages':actual,'nonwhite_ratios':ratios,'text_characters':len(text)}
-(qa/'pdf-qa.json').write_text(__import__('json').dumps({'status':'passed','documents':render_record},indent=2))
+        render_record[name]={
+            'expected_pages':expected_pages,
+            'pages':actual,
+            'nonwhite_ratios':ratios,
+            'text_characters':len(text),
+        }
+        if actual!=expected_pages:
+            errors.append(f'{name}: expected {expected_pages}, got {actual}')
+        if len(text)<700:
+            errors.append(f'{name}: suspiciously little extracted text ({len(text)})')
+        if len(ratios)!=actual or not ratios or min(ratios)<0.025:
+            errors.append(f'{name}: rendered page appears blank or missing {ratios}')
+record={'status':'passed' if not errors else 'failed','errors':errors,'documents':render_record}
+(qa/'pdf-qa.json').write_text(json.dumps(record,indent=2))
+print(json.dumps(record,indent=2))
+if errors:
+    raise SystemExit(1)
 print('PDF contracts and rendered-content checks passed')
