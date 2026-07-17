@@ -40,7 +40,7 @@ function setScenario(key,focus=false){
 }
 document.addEventListener('DOMContentLoaded',()=>{
   const proofImage=document.querySelector('.proof-photo img');
-  const removeBrokenProof=()=>{if(proofImage?.complete&&proofImage.naturalWidth===0){const figure=proofImage.closest('.proof-photo');figure?.parentElement?.classList.add('single-column');figure?.remove();}};
+  const removeBrokenProof=()=>{if(proofImage?.complete&&proofImage.naturalWidth===0){const figure=proofImage.closest('.proof-photo');const route=figure?.parentElement;if(route)route.style.gridTemplateColumns='1fr';figure?.remove();}};
   proofImage?.addEventListener('error',removeBrokenProof,{once:true});
   removeBrokenProof();
   const toggle=document.querySelector('.mobile-toggle'),links=document.getElementById('site-links');
