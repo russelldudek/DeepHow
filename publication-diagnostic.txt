@@ -1,0 +1,1 @@
+Validate the staged DeepHow campaign payload and GitHub Actions execution.
