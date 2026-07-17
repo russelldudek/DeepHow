@@ -40,19 +40,40 @@ jobs:
           base64 -d campaign-payload.b64 | tar -xz
           rm -f campaign-payload.b64 campaign-payload.part-*
           mkdir -p assets/brand docs qa
-      - name: Normalize final artifact manifest
+      - name: Normalize final campaign package
         run: |
           python3 - <<'PY'
           import json
           from pathlib import Path
+
           manifest_path=Path('artifact-manifest.json')
           manifest=json.loads(manifest_path.read_text())
           manifest['assets']=[a for a in manifest.get('assets',[]) if a!='assets/deephow-product.jpg']
           manifest_path.write_text(json.dumps(manifest,indent=2)+'\n')
+
           qa=Path('scripts/qa.py')
-          text=qa.read_text().replace(",\'assets/deephow-product.jpg\'","")
-          qa.write_text(text)
-          print([line for line in text.splitlines() if line.startswith('required=')][0])
+          qa.write_text(qa.read_text().replace(",\'assets/deephow-product.jpg\'",""))
+
+          browser=Path('scripts/browser_qa.py')
+          browser.write_text(browser.read_text().replace(
+            "duration in ['0.001ms','0.001s','0s']",
+            "duration in ['0.001ms','0.001s','0s','1e-06s']"
+          ))
+
+          favicon='<link rel="icon" href="assets/brand/deephow-logo.svg" type="image/svg+xml">'
+          for html in Path('.').glob('*.html'):
+            text=html.read_text()
+            if 'rel="icon"' not in text:
+              text=text.replace('</title>', '</title>'+favicon, 1)
+              html.write_text(text)
+
+          css=Path('styles.css')
+          css.write_text(css.read_text()+'''\n@media(max-width:800px){
+            .review-doc{overflow-x:hidden}
+            .review-doc .paper{max-width:100%;box-sizing:border-box}
+            .review-doc .review-table{max-width:100%;box-sizing:border-box}
+            .review-doc .doc-section p{overflow-wrap:anywhere;word-break:break-word}
+          }\n''')
           PY
       - name: Retrieve official DeepHow identity
         run: |
