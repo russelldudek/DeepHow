@@ -1,1 +1,0 @@
-The active source-card dot and short connector line are intentionally removed. Selection remains visible through the card highlight, active state text, product accent, and the bidirectional platform arrows.
