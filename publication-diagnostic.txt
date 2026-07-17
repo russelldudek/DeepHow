@@ -1,1 +1,1 @@
-Verify the favicon, mobile review worksheet containment, and reduced-motion browser normalization fixes, then publish the complete campaign to main.
+Inspect or enable GitHub Pages and capture the live candidate-vision response before declaring deployment complete.
