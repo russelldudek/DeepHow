@@ -71,19 +71,13 @@ jobs:
         id: browser
         continue-on-error: true
         run: python3 scripts/browser_qa.py
-      - name: Report browser validation failure
+      - name: Upload browser QA record
         if: always()
-        run: |
-          if [ -f qa/browser-qa.json ]; then
-            python3 - <<'PY'
-          import json
-          from pathlib import Path
-          data=json.loads(Path('qa/browser-qa.json').read_text())
-          print(json.dumps({'status':data.get('status'),'errors':data.get('errors',[])},indent=2))
-          PY
-          else
-            echo 'browser-qa.json was not produced'
-          fi
+        uses: actions/upload-artifact@v4
+        with:
+          name: deephow-browser-qa
+          path: qa/browser-qa.json
+          if-no-files-found: warn
       - name: Enforce browser validation
         if: steps.browser.outcome != 'success'
         run: exit 1
