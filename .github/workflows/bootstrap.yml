@@ -17,43 +17,118 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - name: Inspect or enable GitHub Pages
+      - uses: actions/checkout@v4
+      - name: Inspect GitHub Pages
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          set +e
-          gh api "repos/${GITHUB_REPOSITORY}/pages" > pages-before.json 2>pages-before.err
-          before=$?
-          set -e
-          if [ "$before" -ne 0 ]; then
-            gh api --method POST "repos/${GITHUB_REPOSITORY}/pages" -f build_type=workflow > pages-create.json
-          fi
           gh api "repos/${GITHUB_REPOSITORY}/pages" > pages-state.json
           cat pages-state.json
-      - name: Probe candidate-vision URL
+      - name: Wait for live resolver release
         run: |
-          set +e
-          curl --location --silent --show-error --max-time 30 \
-            --dump-header live-headers.txt \
-            --output live-index.html \
-            "https://russelldudek.github.io/DeepHow/"
-          echo "$?" > live-curl-status.txt
-          set -e
-          cat live-headers.txt || true
-      - name: Upload Pages diagnostic
+          base='https://russelldudek.github.io/DeepHow'
+          mkdir -p live
+          for attempt in $(seq 1 18); do
+            curl --fail --location --silent --show-error --max-time 60 "$base/resolver.css?audit=$GITHUB_SHA-$attempt" -o live/resolver.css || true
+            curl --fail --location --silent --show-error --max-time 60 "$base/app.js?audit=$GITHUB_SHA-$attempt" -o live/app.js || true
+            if cmp -s resolver.css live/resolver.css && cmp -s app.js live/app.js; then
+              echo "Live release matches main on attempt $attempt"
+              break
+            fi
+            sleep 10
+          done
+          cmp resolver.css live/resolver.css
+          cmp app.js live/app.js
+      - name: Install browser audit dependency
+        run: pip3 install --break-system-packages playwright
+      - name: Verify selected-product loop in live Chrome
+        env:
+          AUDIT_SHA: ${{ github.sha }}
+        run: |
+          cat > /tmp/live_loop_audit.py <<'PY'
+          import asyncio, json, os, shutil
+          from pathlib import Path
+          from playwright.async_api import async_playwright
+
+          OUT = Path('live')
+          BASE = 'https://russelldudek.github.io/DeepHow/'
+          BROWSER = next((shutil.which(x) for x in ['google-chrome-stable','google-chrome','chromium','chromium-browser'] if shutil.which(x)), None)
+          if not BROWSER:
+              raise SystemExit('No installed Chrome/Chromium')
+
+          GEOMETRY = '''() => {
+            const active = document.querySelector('.work-source[aria-current="true"]');
+            const signal = document.querySelector('.signal-line');
+            const learning = document.querySelector('.return-line');
+            if (!active || !signal || !learning) return {difference:999};
+            const a = active.getBoundingClientRect();
+            const s = signal.getBoundingClientRect();
+            const r = learning.getBoundingClientRect();
+            return {
+              difference: Math.abs((a.top + a.height / 2) - (((s.top + s.height / 2) + (r.top + r.height / 2)) / 2)),
+              active: active.dataset.source || '',
+              activeState: active.querySelector('.source-state')?.textContent.trim() || '',
+              signalLabel: document.querySelector('.signal-label')?.textContent.trim() || '',
+              returnLabel: document.querySelector('.return-label')?.textContent.trim() || ''
+            };
+          }'''
+
+          async def main():
+              async with async_playwright() as p:
+                  browser = await p.chromium.launch(headless=True, executable_path=BROWSER, args=['--no-sandbox','--disable-dev-shm-usage'])
+                  desktop = await browser.new_page(viewport={'width':1280,'height':800})
+                  errors=[]
+                  desktop.on('pageerror', lambda e: errors.append(str(e)))
+                  desktop.on('console', lambda m: errors.append(m.text) if m.type == 'error' else None)
+                  await desktop.goto(BASE + '?audit=' + os.environ.get('AUDIT_SHA',''), wait_until='networkidle')
+                  await desktop.wait_for_selector('#work-coordinate')
+                  await desktop.wait_for_timeout(200)
+                  kct = await desktop.evaluate(GEOMETRY)
+                  await desktop.locator('button[data-scenario="output"]').click()
+                  await desktop.wait_for_timeout(100)
+                  oov = await desktop.evaluate(GEOMETRY)
+                  await desktop.screenshot(path=str(OUT/'live-loop-desktop.png'), full_page=False)
+
+                  mobile = await browser.new_page(viewport={'width':390,'height':844})
+                  await mobile.goto(BASE + '?audit-mobile=' + os.environ.get('AUDIT_SHA',''), wait_until='networkidle')
+                  await mobile.wait_for_selector('#work-coordinate')
+                  await mobile.wait_for_timeout(200)
+                  mobile_state = await mobile.evaluate('''() => ({
+                    overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+                    signalLabel: document.querySelector('.signal-label')?.textContent.trim() || '',
+                    returnLabel: document.querySelector('.return-label')?.textContent.trim() || '',
+                    active: document.querySelector('.work-source[aria-current="true"]')?.dataset.source || ''
+                  })''')
+                  await mobile.locator('#work-coordinate').screenshot(path=str(OUT/'live-loop-mobile.png'))
+                  await browser.close()
+
+              checks = {
+                'no_browser_errors': not errors,
+                'kct_loop_centered': kct.get('difference',999) <= 3,
+                'kct_loop_explicit': kct.get('signalLabel') == 'KCT to platform' and kct.get('returnLabel') == 'Learning back to KCT' and kct.get('activeState') == 'Active loop',
+                'oov_loop_moves_with_selection': oov.get('difference',999) <= 3 and oov.get('active') == 'output',
+                'oov_loop_explicit': oov.get('signalLabel') == 'OOV to platform' and oov.get('returnLabel') == 'Learning back to OOV' and oov.get('activeState') == 'Active loop',
+                'mobile_no_horizontal_overflow': mobile_state.get('overflow',999) <= 1,
+                'mobile_loop_explicit': mobile_state.get('active') == 'knowledge' and mobile_state.get('signalLabel') == 'KCT to platform' and mobile_state.get('returnLabel') == 'Learning back to KCT',
+              }
+              record = {'status':'passed' if all(checks.values()) else 'failed','checks':checks,'kct':kct,'oov':oov,'mobile':mobile_state,'errors':errors}
+              (OUT/'live-loop-audit.json').write_text(json.dumps(record,indent=2))
+              print(json.dumps(record,indent=2))
+              if record['status'] != 'passed':
+                  raise SystemExit(1)
+
+          asyncio.run(main())
+          PY
+          python3 /tmp/live_loop_audit.py
+      - name: Upload live loop audit
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: deephow-pages-diagnostic
+          name: deephow-selected-product-loop-live-audit
           path: |
-            pages-before.json
-            pages-before.err
-            pages-create.json
             pages-state.json
-            live-headers.txt
-            live-index.html
-            live-curl-status.txt
-          if-no-files-found: warn
+            live/
+          if-no-files-found: error
   deploy:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
