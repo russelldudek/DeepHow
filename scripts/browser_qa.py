@@ -1,5 +1,5 @@
 from pathlib import Path
-import asyncio, subprocess, time, json, shutil, sys
+import asyncio, subprocess, time, json, shutil, sys, traceback
 from playwright.async_api import async_playwright
 
 root=Path(__file__).resolve().parents[1]
@@ -55,12 +55,20 @@ async def run():
     reduced_state=await reduced.evaluate("""() => ({phase:document.querySelector('#work-coordinate')?.dataset.phase||'',packet:getComputedStyle(document.querySelector('.resolution-packet')).display,coordinates:document.querySelectorAll('.address-coordinate').length})""")
     results.append({'viewport':'reduced-motion','state':reduced_state,'passed':reduced_state=={'phase':'resolved','packet':'none','coordinates':5}})
     await reduced.close();await browser.close()
-asyncio.run(run())
-server.terminate();server.wait(timeout=5)
+runtime_error=None
+try:
+  asyncio.run(run())
+except Exception as exc:
+  runtime_error={'type':type(exc).__name__,'message':str(exc),'traceback':traceback.format_exc()}
+finally:
+  server.terminate()
+  try: server.wait(timeout=5)
+  except subprocess.TimeoutExpired: server.kill()
 errors=[]
 for r in results:
   if r.get('status',200) and r.get('status',200)>=400: errors.append(r)
   if r.get('overflow') or r.get('broken_images') or r.get('passed') is False: errors.append(r)
+if runtime_error: errors.append({'runtime_error':runtime_error})
 record={'status':'passed' if not errors else 'failed','browser':browser_path,'checks':len(results),'errors':errors,'results':results}
 (qa/'browser-qa.json').write_text(json.dumps(record,indent=2))
 print(json.dumps({'status':record['status'],'checks':len(results),'errors':errors},indent=2))
