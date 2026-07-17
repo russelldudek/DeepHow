@@ -1,4 +1,7 @@
 if(!document.querySelector('link[href="resolver.css"]')){const resolverStyle=document.createElement('link');resolverStyle.rel='stylesheet';resolverStyle.href='resolver.css';document.head.appendChild(resolverStyle);}
+const resolverRefinement=document.createElement('style');
+resolverRefinement.textContent='.work-source[aria-current="true"]::before,.work-source[aria-current="true"]::after{content:none!important;display:none!important}';
+document.head.appendChild(resolverRefinement);
 const scenarios={
   knowledge:{code:'KCT',surface:'Knowledge Capture & Transfer',platform:'Versioned work ontology',decision:'Make expertise retrievable without separating it from the work, role, equipment, and approved procedure it belongs to.',tag:'WORK://EXPERT-CAPTURE/ROLE-04/V2',state:'Knowledge addressed',identity:'Expert role · asset · SOP V2',expected:'Approved guidance sequence',observed:'Captured demonstration + narration',evidence:'Version · author · review · context',learning:'Retrieval use + SOP change'},
   output:{code:'OOV',surface:'Operational Output Verification',platform:'Output evidence contract',decision:'Define the observable result, tolerance, confidence posture, exception class, and human review before automating the judgment.',tag:'WORK://OUTPUT-VERIFY/LOT-118/V1',state:'Output evidence set',identity:'Lot 118 · station · product',expected:'Output standard + tolerance',observed:'Completion photo or video',evidence:'Confidence + exception class',learning:'Defect pattern + standard update'},
