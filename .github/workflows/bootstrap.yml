@@ -3,15 +3,31 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  pull_request:
+    branches: [main]
 permissions:
   contents: write
   pages: write
   id-token: write
 concurrency:
-  group: deephow-publication
+  group: deephow-publication-${{ github.event_name }}
   cancel-in-progress: false
 jobs:
+  diagnostic:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify staged payload
+        run: |
+          ls -la campaign-payload.part-*
+          cat campaign-payload.part-* > campaign-payload.b64
+          base64 -d campaign-payload.b64 | tar -tz > /tmp/manifest.txt
+          test -s /tmp/manifest.txt
+          grep -q './index.html' /tmp/manifest.txt
+          grep -q './scripts/qa.py' /tmp/manifest.txt
   publish:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
