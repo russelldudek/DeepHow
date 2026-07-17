@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: deephow-quality-${{ github.event_name }}-${{ github.ref }}
@@ -19,8 +19,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
       - name: Install publication dependencies
         run: |
           sudo apt-get update
@@ -39,17 +37,6 @@ jobs:
           fi
       - name: Validate responsive browser experience
         run: python3 scripts/browser_qa.py
-      - name: Commit regenerated application PDFs
-        if: github.event_name == 'pull_request' && github.head_ref == 'rebalance-application-documents' && github.actor != 'github-actions[bot]'
-        run: |
-          git config user.name 'candidate-document-bot'
-          git config user.email 'actions@users.noreply.github.com'
-          git add docs/Russell-Dudek-DeepHow-Resume.pdf docs/Russell-Dudek-DeepHow-Cover-Letter.pdf
-          if git diff --cached --quiet; then
-            exit 0
-          fi
-          git commit -m 'Regenerate balanced resume and cover letter PDFs'
-          git push origin HEAD:${GITHUB_HEAD_REF}
       - name: Upload quality evidence
         if: always()
         uses: actions/upload-artifact@v4
