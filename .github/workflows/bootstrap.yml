@@ -1,0 +1,56 @@
+name: Bootstrap verified DeepHow campaign
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: deephow-bootstrap
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: ${{ hashFiles('campaign-payload.b64') != '' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Expand campaign source
+        run: |
+          base64 -d campaign-payload.b64 | tar -xz
+          rm -f campaign-payload.b64 .github/workflows/bootstrap.yml
+          mkdir -p assets/brand docs qa
+      - name: Retrieve official DeepHow identity
+        run: |
+          curl --fail --location --retry 3 'https://cdn.prod.website-files.com/68a896806364451d3e31efdb/68a8a17242ec643c737759bd_deephow-logo.svg' -o assets/brand/deephow-logo.svg
+          test -s assets/brand/deephow-logo.svg
+      - name: Install publication dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils libpango-1.0-0 libharfbuzz0b libpangoft2-1.0-0
+          pip3 install --break-system-packages weasyprint pypdf pillow beautifulsoup4 playwright
+      - name: Generate PDFs and run QA
+        run: |
+          python3 scripts/build_pdfs.py
+          python3 scripts/qa.py
+          python3 scripts/browser_qa.py
+      - name: Commit complete campaign
+        run: |
+          git config user.name 'candidate-campaign-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -A
+          git commit -m '[generated] Publish verified DeepHow candidate campaign'
+          git push
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - name: Deploy Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
