@@ -1,0 +1,1 @@
+Verify that the public candidate vision serves the Work Address Resolver from the audited main branch.
