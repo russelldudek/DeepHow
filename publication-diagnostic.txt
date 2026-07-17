@@ -1,1 +1,1 @@
-Run the campaign through separated validation gates and print the compact responsive-browser failure record before enforcing the gate.
+Run the campaign validation matrix and export the exact browser QA record as a workflow artifact.
