@@ -1,9 +1,9 @@
 if(!document.querySelector('link[href="resolver.css"]')){const resolverStyle=document.createElement('link');resolverStyle.rel='stylesheet';resolverStyle.href='resolver.css';document.head.appendChild(resolverStyle);}
 const scenarios={
-  knowledge:{surface:'Knowledge Capture & Transfer',platform:'Versioned work ontology',decision:'Make expertise retrievable without separating it from the work, role, equipment, and approved procedure it belongs to.',tag:'WORK://EXPERT-CAPTURE/ROLE-04/V2',state:'Knowledge addressed',identity:'Expert role · asset · SOP V2',expected:'Approved guidance sequence',observed:'Captured demonstration + narration',evidence:'Version · author · review · context',learning:'Retrieval use + SOP change'},
-  output:{surface:'Operational Output Verification',platform:'Output evidence contract',decision:'Define the observable result, tolerance, confidence posture, exception class, and human review before automating the judgment.',tag:'WORK://OUTPUT-VERIFY/LOT-118/V1',state:'Output evidence set',identity:'Lot 118 · station · product',expected:'Output standard + tolerance',observed:'Completion photo or video',evidence:'Confidence + exception class',learning:'Defect pattern + standard update'},
-  live:{surface:'Live SOP Verification',platform:'Sequence + latency contract',decision:'Match model confidence and response time to the consequence of a missed, late, or incorrect intervention—and preserve human authority.',tag:'WORK://LIVE-SOP/STEP-07/V3',state:'Drift threshold set',identity:'Step 07 · operator · equipment',expected:'Approved action sequence',observed:'Live action + timing',evidence:'Latency + confidence + human authority',learning:'Drift event + intervention result'},
-  motion:{surface:'Time & Motion AI',platform:'Cycle and activity event model',decision:'Keep activity classification tied to the same work identity so timing variation can return as a useful improvement hypothesis.',tag:'WORK://CYCLE-ANALYSIS/CELL-12/V5',state:'Flow address resolved',identity:'Cell 12 · cycle · role',expected:'Standard activity pattern',observed:'Classified motion + duration',evidence:'Event model + uncertainty',learning:'Bottleneck + improvement hypothesis'}
+  knowledge:{code:'KCT',surface:'Knowledge Capture & Transfer',platform:'Versioned work ontology',decision:'Make expertise retrievable without separating it from the work, role, equipment, and approved procedure it belongs to.',tag:'WORK://EXPERT-CAPTURE/ROLE-04/V2',state:'Knowledge addressed',identity:'Expert role · asset · SOP V2',expected:'Approved guidance sequence',observed:'Captured demonstration + narration',evidence:'Version · author · review · context',learning:'Retrieval use + SOP change'},
+  output:{code:'OOV',surface:'Operational Output Verification',platform:'Output evidence contract',decision:'Define the observable result, tolerance, confidence posture, exception class, and human review before automating the judgment.',tag:'WORK://OUTPUT-VERIFY/LOT-118/V1',state:'Output evidence set',identity:'Lot 118 · station · product',expected:'Output standard + tolerance',observed:'Completion photo or video',evidence:'Confidence + exception class',learning:'Defect pattern + standard update'},
+  live:{code:'LSV',surface:'Live SOP Verification',platform:'Sequence + latency contract',decision:'Match model confidence and response time to the consequence of a missed, late, or incorrect intervention—and preserve human authority.',tag:'WORK://LIVE-SOP/STEP-07/V3',state:'Drift threshold set',identity:'Step 07 · operator · equipment',expected:'Approved action sequence',observed:'Live action + timing',evidence:'Latency + confidence + human authority',learning:'Drift event + intervention result'},
+  motion:{code:'TMA',surface:'Time & Motion AI',platform:'Cycle and activity event model',decision:'Keep activity classification tied to the same work identity so timing variation can return as a useful improvement hypothesis.',tag:'WORK://CYCLE-ANALYSIS/CELL-12/V5',state:'Flow address resolved',identity:'Cell 12 · cycle · role',expected:'Standard activity pattern',observed:'Classified motion + duration',evidence:'Event model + uncertainty',learning:'Bottleneck + improvement hypothesis'}
 };
 const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
 let resolutionTimer;
@@ -14,8 +14,12 @@ function setScenario(key,focus=false){
     const active=source.dataset.source===key;
     source.setAttribute('aria-current',String(active));
     const state=source.querySelector('.source-state');
-    if(state)state.textContent=active?'Signal selected':'Available';
+    if(state)state.textContent=active?'Active loop':'Available';
   });
+  const signalLabel=document.querySelector('.signal-label');
+  const returnLabel=document.querySelector('.return-label');
+  if(signalLabel)signalLabel.textContent=`${scenario.code} to platform`;
+  if(returnLabel)returnLabel.textContent=`Learning back to ${scenario.code}`;
   const ids={surface:'surface-value',platform:'platform-value',decision:'decision-value',tag:'address-tag',state:'resolver-result',identity:'coordinate-identity',expected:'coordinate-expected',observed:'coordinate-observed',evidence:'coordinate-evidence',learning:'coordinate-learning'};
   Object.entries(ids).forEach(([field,id])=>{const element=document.getElementById(id);if(element)element.textContent=scenario[field]});
   const stage=document.getElementById('work-coordinate');
