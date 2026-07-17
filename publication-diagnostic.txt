@@ -1,1 +1,1 @@
-Run the campaign validation matrix and export the exact browser QA record as a workflow artifact.
+Verify the favicon, mobile review worksheet containment, and reduced-motion browser normalization fixes, then publish the complete campaign to main.
