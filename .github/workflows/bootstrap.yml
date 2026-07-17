@@ -1,4 +1,4 @@
-name: Publish verified DeepHow campaign
+name: Publish DeepHow candidate vision
 on:
   push:
     branches: [main]
@@ -6,111 +6,56 @@ on:
   pull_request:
     branches: [main]
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 concurrency:
-  group: deephow-publication-${{ github.event_name }}
+  group: deephow-pages-${{ github.event_name }}
   cancel-in-progress: false
 jobs:
-  diagnostic:
+  pages-check:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Verify staged payload
+      - name: Inspect or enable GitHub Pages
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          ls -la campaign-payload.part-*
-          cat campaign-payload.part-* > campaign-payload.b64
-          base64 -d campaign-payload.b64 | tar -tz > /tmp/manifest.txt
-          test -s /tmp/manifest.txt
-          grep -q './index.html' /tmp/manifest.txt
-          grep -q './scripts/qa.py' /tmp/manifest.txt
-  build:
-    if: github.event_name == 'pull_request' && github.head_ref == 'publication-diagnostic'
-    needs: diagnostic
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: main
-      - name: Expand campaign source
+          set +e
+          gh api "repos/${GITHUB_REPOSITORY}/pages" > pages-before.json 2>pages-before.err
+          before=$?
+          set -e
+          if [ "$before" -ne 0 ]; then
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/pages" -f build_type=workflow > pages-create.json
+          fi
+          gh api "repos/${GITHUB_REPOSITORY}/pages" > pages-state.json
+          cat pages-state.json
+      - name: Probe candidate-vision URL
         run: |
-          cat campaign-payload.part-* > campaign-payload.b64
-          base64 -d campaign-payload.b64 | tar -xz
-          rm -f campaign-payload.b64 campaign-payload.part-*
-          mkdir -p assets/brand docs qa
-      - name: Normalize final campaign package
-        run: |
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-
-          manifest_path=Path('artifact-manifest.json')
-          manifest=json.loads(manifest_path.read_text())
-          manifest['assets']=[a for a in manifest.get('assets',[]) if a!='assets/deephow-product.jpg']
-          manifest_path.write_text(json.dumps(manifest,indent=2)+'\n')
-
-          qa=Path('scripts/qa.py')
-          qa.write_text(qa.read_text().replace(",\'assets/deephow-product.jpg\'",""))
-
-          browser=Path('scripts/browser_qa.py')
-          browser.write_text(browser.read_text().replace(
-            "duration in ['0.001ms','0.001s','0s']",
-            "duration in ['0.001ms','0.001s','0s','1e-06s']"
-          ))
-
-          favicon='<link rel="icon" href="assets/brand/deephow-logo.svg" type="image/svg+xml">'
-          for html in Path('.').glob('*.html'):
-            text=html.read_text()
-            if 'rel="icon"' not in text:
-              text=text.replace('</title>', '</title>'+favicon, 1)
-              html.write_text(text)
-
-          css=Path('styles.css')
-          css.write_text(css.read_text()+'''\n@media(max-width:800px){
-            .review-doc{overflow-x:hidden}
-            .review-doc .paper{max-width:100%;box-sizing:border-box}
-            .review-doc .review-table{max-width:100%;box-sizing:border-box}
-            .review-doc .doc-section p{overflow-wrap:anywhere;word-break:break-word}
-          }\n''')
-          PY
-      - name: Retrieve official DeepHow identity
-        run: |
-          curl --fail --location --retry 3 'https://cdn.prod.website-files.com/68a896806364451d3e31efdb/68a8a17242ec643c737759bd_deephow-logo.svg' -o assets/brand/deephow-logo.svg
-          test -s assets/brand/deephow-logo.svg
-      - name: Install publication dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y poppler-utils libpango-1.0-0 libharfbuzz0b libpangoft2-1.0-0
-          pip3 install --break-system-packages weasyprint pypdf pillow beautifulsoup4 playwright
-      - name: Generate and validate PDFs
-        run: python3 scripts/build_pdfs.py
-      - name: Validate source and evidence integrity
-        run: python3 scripts/qa.py
-      - name: Validate responsive browser experience
-        id: browser
-        continue-on-error: true
-        run: python3 scripts/browser_qa.py
-      - name: Upload browser QA record
+          set +e
+          curl --location --silent --show-error --max-time 30 \
+            --dump-header live-headers.txt \
+            --output live-index.html \
+            "https://russelldudek.github.io/DeepHow/"
+          echo "$?" > live-curl-status.txt
+          set -e
+          cat live-headers.txt || true
+      - name: Upload Pages diagnostic
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: deephow-browser-qa
-          path: qa/browser-qa.json
+          name: deephow-pages-diagnostic
+          path: |
+            pages-before.json
+            pages-before.err
+            pages-create.json
+            pages-state.json
+            live-headers.txt
+            live-index.html
+            live-curl-status.txt
           if-no-files-found: warn
-      - name: Enforce browser validation
-        if: steps.browser.outcome != 'success'
-        run: exit 1
-      - name: Commit complete campaign to main
-        run: |
-          git config user.name 'candidate-campaign-bot'
-          git config user.email 'actions@users.noreply.github.com'
-          git add -A
-          git commit -m '[generated] Publish verified DeepHow candidate campaign'
-          git push origin main
   deploy:
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
