@@ -1,7 +1,5 @@
 name: Publish verified DeepHow campaign
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 permissions:
   contents: write
