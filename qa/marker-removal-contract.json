@@ -1,0 +1,10 @@
+{
+  "intent": "Remove the redundant active-card dot and short connector line.",
+  "selection_signals_retained": [
+    "active card highlight",
+    "product accent",
+    "Active loop state text",
+    "outbound platform arrow",
+    "learning-return arrow"
+  ]
+}
