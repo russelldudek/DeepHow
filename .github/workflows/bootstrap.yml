@@ -1,4 +1,4 @@
-name: Bootstrap verified DeepHow campaign
+name: Publish verified DeepHow campaign
 on:
   push:
     branches: [main]
@@ -8,21 +8,19 @@ permissions:
   pages: write
   id-token: write
 concurrency:
-  group: deephow-bootstrap
+  group: deephow-publication
   cancel-in-progress: false
 jobs:
-  publish:
-    if: ${{ hashFiles('campaign-payload.b64') != '' }}
+  build:
+    if: ${{ hashFiles('campaign-payload.part-*') != '' }}
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - name: Expand campaign source
         run: |
+          cat campaign-payload.part-* > campaign-payload.b64
           base64 -d campaign-payload.b64 | tar -xz
-          rm -f campaign-payload.b64 .github/workflows/bootstrap.yml
+          rm -f campaign-payload.b64 campaign-payload.part-*
           mkdir -p assets/brand docs qa
       - name: Retrieve official DeepHow identity
         run: |
@@ -45,6 +43,14 @@ jobs:
           git add -A
           git commit -m '[generated] Publish verified DeepHow candidate campaign'
           git push
+  deploy:
+    if: ${{ hashFiles('campaign-payload.part-*') == '' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
       - name: Upload Pages artifact
