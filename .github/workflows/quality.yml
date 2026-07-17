@@ -1,0 +1,46 @@
+name: Verify DeepHow candidate vision
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deephow-quality-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install publication dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils libpango-1.0-0 libharfbuzz0b libpangoft2-1.0-0
+          pip3 install --break-system-packages weasyprint pypdf pillow beautifulsoup4 playwright
+      - name: Validate generated documents
+        run: python3 scripts/build_pdfs.py
+      - name: Validate source and evidence integrity
+        run: python3 scripts/qa.py
+      - name: Validate animation contract when present
+        run: |
+          if [ -f scripts/animation_contract.py ]; then
+            python3 scripts/animation_contract.py
+          else
+            echo 'Animation contract will activate with the replacement hero.'
+          fi
+      - name: Validate responsive browser experience
+        run: python3 scripts/browser_qa.py
+      - name: Upload quality evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deephow-quality-evidence
+          path: qa/
+          if-no-files-found: warn
