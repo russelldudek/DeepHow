@@ -1,0 +1,345 @@
+{
+  "status": "passed",
+  "browser": "/usr/bin/google-chrome-stable",
+  "checks": 49,
+  "errors": [],
+  "results": [
+    {
+      "viewport": "desktop",
+      "route": "index.html",
+      "status": 200,
+      "overflow": false,
+      "broken_images": [],
+      "title": "Russell Dudek | DeepHow Physical AI Platform"
+    },
+    {
+      "viewport": "desktop",
+      "interaction": "output",
+      "passed": true,
+      "actual": "Operational Output Verification"
+    },
+    {
+      "viewport": "desktop",
+      "interaction": "live",
+      "passed": true,
+      "actual": "Live SOP Verification"
+    },
+    {
+      "viewport": "desktop",
+      "interaction": "motion",
+      "passed": true,
+      "actual": "Time & Motion AI"
+    },
+    {
+      "viewport": "desktop",
+      "interaction": "reset",
+      "passed": true,
+      "actual": "Knowledge Capture & Transfer"
+    },
+    {
+      "viewport": "desktop",
+      "interaction": "keyboard",
+      "passed": true,
+      "actual": "Operational Output Verification"
+    },
+    {
+      "viewport": "desktop",
+      "route": "resume.html",
+      "status": 200,
+      "overflow": false,
+      "broken_images": [],
+      "title": "Russell Dudek Resume | DeepHow"
+    },
+    {
+      "viewport": "desktop",
+      "route": "cover-letter.html",
+      "status": 200,
+      "overflow": false,
+      "broken_images": [],
+      "title": "Russell Dudek Cover Letter | DeepHow"
+    },
+    {
+      "viewport": "desktop",
+      "route": "interview-brief.html",
+      "status": 200,
+      "overflow": false,
+      "broken_images": [],
+      "title": "Interview Thesis Brief | DeepHow"
+    },
+    {
+      "viewport": "desktop",
+      "route": "120-day-plan.html",
+      "status": 200,
+      "overflow": false,
+      "broken_images": [],
+      "title": "120-Day Entry Plan | DeepHow"
+    },
+    {
+      "viewport": "desktop",
+      "route": "work-address-review.html",
+      "status": 200,
+      "overflow": false,
+      "broken_images": [],
+      "title": "Work Address Review | DeepHow"
+    },
+    {
+      "viewport": "desktop",
+      "browser_errors": [],
+      "passed": true
+    },
+    {
+      "viewport": "laptop",
+      "route": "index.html",
+      "status": 200,
+      "overflow": false,
+      "broken_images": [],
+      "title": "Russell Dudek | DeepHow Physical AI Platform"
+    },
+    {
+      "viewport": "laptop",
+      "interaction": "output",
+      "passed": true,
+      "actual": "Operational Output Verification"
+    },
+    {
+      "viewport": "laptop",
+      "interaction": "live",
+      "passed": true,
+      "actual": "Live SOP Verification"
+    },
+    {
+      "viewport": "laptop",
+      "interaction": "motion",
+      "passed": true,
+      "actual": "Time & Motion AI"
+    },
+    {
+      "viewport": "laptop",
+      "interaction": "reset",
+      "passed": true,
+      "actual": "Knowledge Capture & Transfer"
+    },
+    {
+      "viewport": "laptop",
+      "interaction": "keyboard",
+      "passed": true,
+      "actual": "Operational Output Verification"
+    },
+    {
+      "viewport": "laptop",
+      "route": "resume.html",
+      "status": 200,
+      "overflow": false,
+      "broken_images": [],
+      "title": "Russell Dudek Resume | DeepHow"
+    },
+    {
+      "viewport": "laptop",
+      "route": "cover-letter.html",
+      "status": 200,
+      "overflow": false,
+      "broken_images": [],
+      "title": "Russell Dudek Cover Letter | DeepHow"
+    },
+    {
+      "viewport": "laptop",
+      "route": "interview-brief.html",
+      "status": 200,
+      "overflow": false,
+      "broken_images": [],
+      "title": "Interview Thesis Brief | DeepHow"
+    },
+    {
+      "viewport": "laptop",
+      "route": "120-day-plan.html",
+      "status": 200,
+      "overflow": false,
+      "broken_images": [],
+      "title": "120-Day Entry Plan | DeepHow"
+    },
+    {
+      "viewport": "laptop",
+      "route": "work-address-review.html",
+      "status": 200,
+      "overflow": false,
+      "broken_images": [],
+      "title": "Work Address Review | DeepHow"
+    },
+    {
+      "viewport": "laptop",
+      "browser_errors": [],
+      "passed": true
+    },
+    {
+      "viewport": "tablet",
+      "route": "index.html",
+      "status": 200,
+      "overflow": false,
+      "broken_images": [],
+      "title": "Russell Dudek | DeepHow Physical AI Platform"
+    },
+    {
+      "viewport": "tablet",
+      "interaction": "output",
+      "passed": true,
+      "actual": "Operational Output Verification"
+    },
+    {
+      "viewport": "tablet",
+      "interaction": "live",
+      "passed": true,
+      "actual": "Live SOP Verification"
+    },
+    {
+      "viewport": "tablet",
+      "interaction": "motion",
+      "passed": true,
+      "actual": "Time & Motion AI"
+    },
+    {
+      "viewport": "tablet",
+      "interaction": "reset",
+      "passed": true,
+      "actual": "Knowledge Capture & Transfer"
+    },
+    {
+      "viewport": "tablet",
+      "interaction": "keyboard",
+      "passed": true,
+      "actual": "Operational Output Verification"
+    },
+    {
+      "viewport": "tablet",
+      "route": "resume.html",
+      "status": 200,
+      "overflow": false,
+      "broken_images": [],
+      "title": "Russell Dudek Resume | DeepHow"
+    },
+    {
+      "viewport": "tablet",
+      "route": "cover-letter.html",
+      "status": 200,
+      "overflow": false,
+      "broken_images": [],
+      "title": "Russell Dudek Cover Letter | DeepHow"
+    },
+    {
+      "viewport": "tablet",
+      "route": "interview-brief.html",
+      "status": 200,
+      "overflow": false,
+      "broken_images": [],
+      "title": "Interview Thesis Brief | DeepHow"
+    },
+    {
+      "viewport": "tablet",
+      "route": "120-day-plan.html",
+      "status": 200,
+      "overflow": false,
+      "broken_images": [],
+      "title": "120-Day Entry Plan | DeepHow"
+    },
+    {
+      "viewport": "tablet",
+      "route": "work-address-review.html",
+      "status": 200,
+      "overflow": false,
+      "broken_images": [],
+      "title": "Work Address Review | DeepHow"
+    },
+    {
+      "viewport": "tablet",
+      "browser_errors": [],
+      "passed": true
+    },
+    {
+      "viewport": "mobile",
+      "route": "index.html",
+      "status": 200,
+      "overflow": false,
+      "broken_images": [],
+      "title": "Russell Dudek | DeepHow Physical AI Platform"
+    },
+    {
+      "viewport": "mobile",
+      "interaction": "output",
+      "passed": true,
+      "actual": "Operational Output Verification"
+    },
+    {
+      "viewport": "mobile",
+      "interaction": "live",
+      "passed": true,
+      "actual": "Live SOP Verification"
+    },
+    {
+      "viewport": "mobile",
+      "interaction": "motion",
+      "passed": true,
+      "actual": "Time & Motion AI"
+    },
+    {
+      "viewport": "mobile",
+      "interaction": "reset",
+      "passed": true,
+      "actual": "Knowledge Capture & Transfer"
+    },
+    {
+      "viewport": "mobile",
+      "interaction": "keyboard",
+      "passed": true,
+      "actual": "Operational Output Verification"
+    },
+    {
+      "viewport": "mobile",
+      "route": "resume.html",
+      "status": 200,
+      "overflow": false,
+      "broken_images": [],
+      "title": "Russell Dudek Resume | DeepHow"
+    },
+    {
+      "viewport": "mobile",
+      "route": "cover-letter.html",
+      "status": 200,
+      "overflow": false,
+      "broken_images": [],
+      "title": "Russell Dudek Cover Letter | DeepHow"
+    },
+    {
+      "viewport": "mobile",
+      "route": "interview-brief.html",
+      "status": 200,
+      "overflow": false,
+      "broken_images": [],
+      "title": "Interview Thesis Brief | DeepHow"
+    },
+    {
+      "viewport": "mobile",
+      "route": "120-day-plan.html",
+      "status": 200,
+      "overflow": false,
+      "broken_images": [],
+      "title": "120-Day Entry Plan | DeepHow"
+    },
+    {
+      "viewport": "mobile",
+      "route": "work-address-review.html",
+      "status": 200,
+      "overflow": false,
+      "broken_images": [],
+      "title": "Work Address Review | DeepHow"
+    },
+    {
+      "viewport": "mobile",
+      "browser_errors": [],
+      "passed": true
+    },
+    {
+      "viewport": "reduced-motion",
+      "animation_duration": "1e-06s",
+      "passed": true
+    }
+  ]
+}

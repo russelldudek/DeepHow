@@ -1,0 +1,47 @@
+{
+  "status": "passed",
+  "documents": {
+    "Russell-Dudek-DeepHow-Resume.pdf": {
+      "pages": 2,
+      "nonwhite_ratios": [
+        0.0934,
+        0.0889
+      ],
+      "text_characters": 6370
+    },
+    "Russell-Dudek-DeepHow-Cover-Letter.pdf": {
+      "pages": 1,
+      "nonwhite_ratios": [
+        0.0839
+      ],
+      "text_characters": 2800
+    },
+    "Russell-Dudek-DeepHow-Interview-Thesis.pdf": {
+      "pages": 4,
+      "nonwhite_ratios": [
+        0.1442,
+        0.1583,
+        0.0819,
+        0.1654
+      ],
+      "text_characters": 7321
+    },
+    "Russell-Dudek-DeepHow-120-Day-Plan.pdf": {
+      "pages": 3,
+      "nonwhite_ratios": [
+        0.0797,
+        0.0709,
+        0.0828
+      ],
+      "text_characters": 5749
+    },
+    "Russell-Dudek-DeepHow-Work-Address-Review.pdf": {
+      "pages": 2,
+      "nonwhite_ratios": [
+        0.0745,
+        0.141
+      ],
+      "text_characters": 3231
+    }
+  }
+}

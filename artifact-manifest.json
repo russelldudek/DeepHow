@@ -1,0 +1,57 @@
+{
+  "campaign": "DeepHow - Product Director, Physical AI Platform",
+  "routes": [
+    "index.html",
+    "resume.html",
+    "cover-letter.html",
+    "interview-brief.html",
+    "120-day-plan.html",
+    "work-address-review.html"
+  ],
+  "styles": [
+    "styles.css",
+    "brand-tokens.css"
+  ],
+  "scripts": [
+    "app.js"
+  ],
+  "brand": [
+    "brand-intelligence.md",
+    "assets/brand/deephow-logo.svg",
+    "assets/deephow-product.jpg"
+  ],
+  "documents": [
+    {
+      "html": "resume.html",
+      "pdf": "docs/Russell-Dudek-DeepHow-Resume.pdf",
+      "pages": 2
+    },
+    {
+      "html": "cover-letter.html",
+      "pdf": "docs/Russell-Dudek-DeepHow-Cover-Letter.pdf",
+      "pages": 1
+    },
+    {
+      "html": "interview-brief.html",
+      "pdf": "docs/Russell-Dudek-DeepHow-Interview-Thesis.pdf",
+      "pages": 4
+    },
+    {
+      "html": "120-day-plan.html",
+      "pdf": "docs/Russell-Dudek-DeepHow-120-Day-Plan.pdf",
+      "pages": 3
+    },
+    {
+      "html": "work-address-review.html",
+      "pdf": "docs/Russell-Dudek-DeepHow-Work-Address-Review.pdf",
+      "pages": 2
+    }
+  ],
+  "records": [
+    "README.md",
+    "source-notes.md",
+    "campaign-audit.md",
+    "artifact-manifest.json"
+  ],
+  "assets": []
+}

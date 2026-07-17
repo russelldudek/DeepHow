@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "errors": [],
+  "pdf_pages": {
+    "docs/Russell-Dudek-DeepHow-Resume.pdf": 2,
+    "docs/Russell-Dudek-DeepHow-Cover-Letter.pdf": 1,
+    "docs/Russell-Dudek-DeepHow-Interview-Thesis.pdf": 4,
+    "docs/Russell-Dudek-DeepHow-120-Day-Plan.pdf": 3,
+    "docs/Russell-Dudek-DeepHow-Work-Address-Review.pdf": 2
+  },
+  "scanned_public_files": 14
+}
