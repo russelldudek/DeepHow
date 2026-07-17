@@ -1,1 +1,1 @@
-Validate the staged payload, build all campaign artifacts, publish the verified source to main, and let the main-branch Pages job deploy it.
+Validate the staged payload, normalize the final artifact manifest, build and QA every campaign artifact, publish to main, then deploy Pages from the main branch.
