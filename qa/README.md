@@ -1,0 +1,1 @@
+Quality workflows generate responsive screenshots and JSON validation records in this directory during CI. Generated workflow artifacts remain attached to the relevant run rather than committed as source.
