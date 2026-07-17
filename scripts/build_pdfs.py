@@ -7,6 +7,7 @@ import subprocess, shutil, tempfile, json
 root=Path(__file__).resolve().parents[1]
 out=root/'docs'; out.mkdir(exist_ok=True)
 qa=root/'qa'; qa.mkdir(exist_ok=True)
+generated=qa/'generated'; generated.mkdir(exist_ok=True)
 items=[
  ('resume.html','Russell-Dudek-DeepHow-Resume.pdf',2,'resume'),
  ('cover-letter.html','Russell-Dudek-DeepHow-Cover-Letter.pdf',1,'cover-letter'),
@@ -46,6 +47,8 @@ for html,name,expected_pages,render_slug in items:
             errors.append(f'{name}: suspiciously little extracted text ({len(text)})')
         if len(ratios)!=actual or not ratios or min(ratios)<0.025:
             errors.append(f'{name}: rendered page appears blank or missing {ratios}')
+    if render_slug:
+        shutil.copy2(dest,generated/name)
 record={'status':'passed' if not errors else 'failed','errors':errors,'documents':render_record}
 (qa/'pdf-qa.json').write_text(json.dumps(record,indent=2))
 print(json.dumps(record,indent=2))
