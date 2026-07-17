@@ -30,16 +30,91 @@ jobs:
           fi
           gh api "repos/${GITHUB_REPOSITORY}/pages" > pages-state.json
           cat pages-state.json
-      - name: Probe candidate-vision URL
+      - name: Probe candidate-vision URL and assets
         run: |
           set +e
           curl --location --silent --show-error --max-time 30 \
             --dump-header live-headers.txt \
             --output live-index.html \
-            "https://russelldudek.github.io/DeepHow/"
+            "https://russelldudek.github.io/DeepHow/?audit=${GITHUB_SHA}"
           echo "$?" > live-curl-status.txt
           set -e
+          curl --fail --location --silent --show-error --max-time 30 \
+            "https://russelldudek.github.io/DeepHow/resolver.css?audit=${GITHUB_SHA}" \
+            --output live-resolver.css
+          curl --fail --location --silent --show-error --max-time 30 \
+            "https://russelldudek.github.io/DeepHow/app.js?audit=${GITHUB_SHA}" \
+            --output live-app.js
+          grep -q 'The Work Address Resolver' live-index.html
+          grep -q '@keyframes packetToAddressX' live-resolver.css
+          grep -q "stage.dataset.phase='resolving'" live-app.js
           cat live-headers.txt || true
+      - name: Verify live Resolver behavior
+        run: |
+          pip3 install --break-system-packages playwright
+          python3 - <<'PY'
+          import asyncio, json, shutil
+          from pathlib import Path
+          from playwright.async_api import async_playwright
+
+          browser_path=next((shutil.which(x) for x in ['google-chrome-stable','google-chrome','chromium','chromium-browser'] if shutil.which(x)),None)
+          if not browser_path:
+              raise SystemExit('No installed browser available')
+          url='https://russelldudek.github.io/DeepHow/?audit=live-resolver'
+
+          async def main():
+              async with async_playwright() as p:
+                  browser=await p.chromium.launch(headless=True,executable_path=browser_path,args=['--no-sandbox','--disable-dev-shm-usage'])
+                  page=await browser.new_page(viewport={'width':1440,'height':900})
+                  errors=[]
+                  page.on('pageerror',lambda e: errors.append(str(e)))
+                  page.on('console',lambda m: errors.append(m.text) if m.type=='error' else None)
+                  response=await page.goto(url,wait_until='networkidle')
+                  await page.wait_for_function("document.querySelector('#work-coordinate')?.dataset.phase === 'resolved'",timeout=5000)
+                  initial=await page.evaluate("""() => ({
+                    phase:document.querySelector('#work-coordinate')?.dataset.phase,
+                    active:document.querySelector('.work-source[aria-current=\"true\"]')?.dataset.source,
+                    state:document.querySelector('#stage-state')?.textContent.trim(),
+                    sources:document.querySelectorAll('.work-source').length,
+                    coordinates:document.querySelectorAll('.address-coordinate').length,
+                    legacy:document.querySelectorAll('.gantry,.crosshead,.scan-line').length
+                  })""")
+                  await page.locator('.scenario-tab[data-scenario="output"]').click()
+                  replay=await page.evaluate("""() => ({
+                    phase:document.querySelector('#work-coordinate')?.dataset.phase,
+                    active:document.querySelector('.work-source[aria-current=\"true\"]')?.dataset.source,
+                    uri:document.querySelector('#address-tag')?.textContent.trim()
+                  })""")
+                  await page.wait_for_function("document.querySelector('#work-coordinate')?.dataset.phase === 'resolved'",timeout=5000)
+                  settled=await page.evaluate("""() => ({
+                    phase:document.querySelector('#work-coordinate')?.dataset.phase,
+                    active:document.querySelector('.work-source[aria-current=\"true\"]')?.dataset.source,
+                    state:document.querySelector('#stage-state')?.textContent.trim()
+                  })""")
+                  await page.screenshot(path='live-resolver.png',full_page=False)
+                  reduced=await browser.new_page(viewport={'width':390,'height':844},reduced_motion='reduce')
+                  reduced_response=await reduced.goto(url,wait_until='networkidle')
+                  reduced_state=await reduced.evaluate("""() => ({
+                    phase:document.querySelector('#work-coordinate')?.dataset.phase,
+                    packet:getComputedStyle(document.querySelector('.resolution-packet')).display,
+                    overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+1
+                  })""")
+                  await reduced.close();await browser.close()
+                  checks={
+                    'http_200':response and response.status==200,
+                    'initial_resolved':initial=={'phase':'resolved','active':'knowledge','state':'Knowledge addressed','sources':4,'coordinates':5,'legacy':0},
+                    'scenario_replays':replay=={'phase':'resolving','active':'output','uri':'WORK://OUTPUT-VERIFY/LOT-118/V1'},
+                    'scenario_settles':settled=={'phase':'resolved','active':'output','state':'Output evidence set'},
+                    'reduced_motion_resolved':reduced_response and reduced_response.status==200 and reduced_state=={'phase':'resolved','packet':'none','overflow':False},
+                    'no_browser_errors':not errors
+                  }
+                  record={'status':'passed' if all(checks.values()) else 'failed','browser':browser_path,'checks':checks,'initial':initial,'replay':replay,'settled':settled,'reduced':reduced_state,'errors':errors}
+                  Path('live-resolver-audit.json').write_text(json.dumps(record,indent=2))
+                  print(json.dumps(record,indent=2))
+                  if record['status']!='passed':
+                      raise SystemExit(1)
+          asyncio.run(main())
+          PY
       - name: Upload Pages diagnostic
         if: always()
         uses: actions/upload-artifact@v4
@@ -53,6 +128,10 @@ jobs:
             live-headers.txt
             live-index.html
             live-curl-status.txt
+            live-resolver.css
+            live-app.js
+            live-resolver-audit.json
+            live-resolver.png
           if-no-files-found: warn
   deploy:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
