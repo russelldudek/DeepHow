@@ -1,1 +1,1 @@
-Validate the staged DeepHow campaign payload and GitHub Actions execution.
+Validate the staged DeepHow campaign payload, publish the verified source to main, and inspect the Pages deployment.
