@@ -44,7 +44,7 @@
   .resume-document .paper:nth-child(2) .resume-toolkit-band p,
   .resume-document .paper:nth-child(2) .resume-publication-band p,
   .resume-document .paper:nth-child(2) .resume-principles-band p{font-size:8.95px;line-height:1.34;margin:0}
-  .cover-document .letter-body{margin-top:24px}
-  .cover-document .letter-body p{font-size:12.2px;line-height:1.58;margin-bottom:13px}
-  .cover-document .signature{margin-top:20px}
+  .cover-document .letter-body{margin-top:30px}
+  .cover-document .letter-body p{font-size:13.4px;line-height:1.68;margin-bottom:18px}
+  .cover-document .signature{margin-top:28px}
 }
