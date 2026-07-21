@@ -1,0 +1,13 @@
+{
+  "live_url": "https://russelldudek.github.io/DeepHow/covington-ai/",
+  "source_campaign_commit": "ad226138732728144e02eaa36d7e3e66a51c2db5",
+  "pages_source_commit": "6c4325d2c271ee8f22ab638ac2c64cd594786ed8",
+  "verification_outcome": "success",
+  "homepage_signature": true,
+  "stylesheet_signature": true,
+  "interaction_signature": true,
+  "document_routes": "passed",
+  "pdf_routes": "passed",
+  "live_index_sha256": "bf2e98976a46acc1c8725eaa3ff1da76f128fe9a41876e2318b598e52f2d95ef",
+  "verified_at_utc": "2026-07-21T06:32:33.018549+00:00"
+}
