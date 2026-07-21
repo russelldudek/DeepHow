@@ -1,0 +1,83 @@
+name: Publish Covington live review
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.covington-preview/**'
+      - 'materialize_covington_preview.py'
+      - '.github/workflows/covington-preview.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Materialize review package
+        run: |
+          set -euo pipefail
+          if [ -f materialize_covington_preview.py ]; then
+            python materialize_covington_preview.py
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add -A
+            git commit -m 'Publish Covington live review'
+            git push
+          fi
+          git rev-parse HEAD > /tmp/source-sha
+
+      - name: Stage complete site
+        run: |
+          rm -rf _site
+          mkdir _site
+          rsync -a --exclude='.git' --exclude='.github' --exclude='_site' ./ _site/
+          touch _site/.nojekyll
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v6
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+      - name: Deploy Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Verify Covington review routes
+        env:
+          LIVE_URL: https://russelldudek.github.io/DeepHow/covington-ai/
+        run: |
+          set -euo pipefail
+          routes=("" styles.css app.js resume.html cover-letter.html interview-brief.html 120-day-plan.html workflow-precedent-review.html source-notes.html)
+          for attempt in $(seq 1 24); do
+            failed=0
+            for route in "${routes[@]}"; do
+              code=$(curl -L -sS --connect-timeout 8 --max-time 20 -o /tmp/live -w '%{http_code}' "${LIVE_URL}${route}" || true)
+              [ "$code" = "200" ] || { failed=1; break; }
+            done
+            if [ "$failed" = "0" ]; then
+              curl -L -sS --connect-timeout 8 --max-time 20 "$LIVE_URL" -o /tmp/live-index
+              grep -q 'Living Precedent Engine' /tmp/live-index
+              grep -q 'Build the common law of AI-enabled work' /tmp/live-index
+              exit 0
+            fi
+            sleep 10
+          done
+          exit 1
