@@ -4,8 +4,6 @@ on:
   push:
     branches: [main]
     paths:
-      - '.covington-preview/**'
-      - 'materialize_covington_preview.py'
       - '.github/workflows/covington-preview.yml'
   workflow_dispatch:
 
@@ -16,7 +14,7 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   publish:
@@ -26,26 +24,68 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout live Pages repository
+        uses: actions/checkout@v6
 
-      - name: Materialize review package
+      - name: Sync canonical Covington campaign from AIAction main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
           set -euo pipefail
-          if [ -f materialize_covington_preview.py ]; then
-            python materialize_covington_preview.py
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git add -A
-            git commit -m 'Publish Covington live review'
+          rm -rf covington-ai
+          mkdir -p covington-ai/pdfs
+
+          files=(
+            index.html
+            styles.css
+            app.js
+            resume.html
+            cover-letter.html
+            interview-brief.html
+            120-day-plan.html
+            workflow-precedent-review.html
+            source-notes.html
+            pdfs/Russell-Dudek-Covington-Resume.pdf
+            pdfs/Russell-Dudek-Covington-Cover-Letter.pdf
+            pdfs/Russell-Dudek-Covington-Interview-Brief.pdf
+            pdfs/Russell-Dudek-Covington-120-Day-Plan.pdf
+            pdfs/Russell-Dudek-Covington-Workflow-Precedent-Review.pdf
+          )
+
+          for file in "${files[@]}"; do
+            mkdir -p "covington-ai/$(dirname "$file")"
+            gh api \
+              -H 'Accept: application/vnd.github.raw+json' \
+              "repos/russelldudek/AIAction/contents/${file}?ref=main" \
+              > "covington-ai/${file}"
+            test -s "covington-ai/${file}"
+          done
+
+          touch covington-ai/.nojekyll
+          grep -q 'Living Precedent Engine' covington-ai/index.html
+          grep -q 'Build the common law of AI-enabled work' covington-ai/index.html
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add covington-ai
+          if ! git diff --cached --quiet; then
+            git commit -m 'Publish Covington Living Precedent Engine'
             git push
           fi
-          git rev-parse HEAD > /tmp/source-sha
 
-      - name: Stage complete site
+      - name: Stage complete Pages site
+        shell: bash
         run: |
+          set -euo pipefail
           rm -rf _site
           mkdir _site
-          rsync -a --exclude='.git' --exclude='.github' --exclude='_site' ./ _site/
+          rsync -a \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='_site' \
+            --exclude='.covington-preview' \
+            ./ _site/
           touch _site/.nojekyll
 
       - name: Configure Pages
@@ -60,24 +100,48 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Verify Covington review routes
+      - name: Verify complete Covington live route set
         env:
           LIVE_URL: https://russelldudek.github.io/DeepHow/covington-ai/
+        shell: bash
         run: |
           set -euo pipefail
-          routes=("" styles.css app.js resume.html cover-letter.html interview-brief.html 120-day-plan.html workflow-precedent-review.html source-notes.html)
-          for attempt in $(seq 1 24); do
+          routes=(
+            ''
+            styles.css
+            app.js
+            resume.html
+            cover-letter.html
+            interview-brief.html
+            120-day-plan.html
+            workflow-precedent-review.html
+            source-notes.html
+            pdfs/Russell-Dudek-Covington-Resume.pdf
+            pdfs/Russell-Dudek-Covington-Cover-Letter.pdf
+            pdfs/Russell-Dudek-Covington-Interview-Brief.pdf
+            pdfs/Russell-Dudek-Covington-120-Day-Plan.pdf
+            pdfs/Russell-Dudek-Covington-Workflow-Precedent-Review.pdf
+          )
+
+          for attempt in $(seq 1 30); do
             failed=0
             for route in "${routes[@]}"; do
-              code=$(curl -L -sS --connect-timeout 8 --max-time 20 -o /tmp/live -w '%{http_code}' "${LIVE_URL}${route}" || true)
-              [ "$code" = "200" ] || { failed=1; break; }
+              code=$(curl -L -sS --connect-timeout 8 --max-time 30 -o /tmp/live-body -w '%{http_code}' "${LIVE_URL}${route}" || true)
+              if [ "$code" != '200' ]; then
+                echo "${route:-index} returned ${code} on attempt ${attempt}"
+                failed=1
+                break
+              fi
             done
-            if [ "$failed" = "0" ]; then
-              curl -L -sS --connect-timeout 8 --max-time 20 "$LIVE_URL" -o /tmp/live-index
+
+            if [ "$failed" = '0' ]; then
+              curl -L -sS --connect-timeout 8 --max-time 30 "$LIVE_URL" -o /tmp/live-index
               grep -q 'Living Precedent Engine' /tmp/live-index
               grep -q 'Build the common law of AI-enabled work' /tmp/live-index
+              echo "Verified live Covington campaign at ${LIVE_URL}"
               exit 0
             fi
             sleep 10
           done
+
           exit 1
