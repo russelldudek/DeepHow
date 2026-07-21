@@ -1,0 +1,71 @@
+name: Verify Covington static Pages publication
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.covington-static-verify'
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify live static campaign
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL='https://russelldudek.github.io/DeepHow/covington-ai'
+          ready=0
+          for attempt in $(seq 1 60); do
+            if curl -fsS "$URL/" -o /tmp/index.html && grep -F 'Build the common law of AI-enabled work.' /tmp/index.html >/dev/null && grep -F 'Living precedent studio' /tmp/index.html >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 8
+          done
+          [ "$ready" = '1' ]
+          curl -fsS "$URL/styles.css" -o /tmp/styles.css
+          grep -F -- '--gold:#e8bd6b' /tmp/styles.css >/dev/null
+          curl -fsS "$URL/app.js" -o /tmp/app.js
+          grep -F 'Living precedent sphere' /tmp/app.js >/dev/null
+          curl -fsSI "$URL/resume.html" | grep -E 'HTTP/[0-9.]+ 200' >/dev/null
+          curl -fsSI "$URL/cover-letter.html" | grep -E 'HTTP/[0-9.]+ 200' >/dev/null
+          curl -fsSI "$URL/interview-brief.html" | grep -E 'HTTP/[0-9.]+ 200' >/dev/null
+          curl -fsSI "$URL/120-day-plan.html" | grep -E 'HTTP/[0-9.]+ 200' >/dev/null
+          curl -fsSI "$URL/workflow-precedent-review.html" | grep -E 'HTTP/[0-9.]+ 200' >/dev/null
+          curl -fsSI "$URL/pdfs/Russell-Dudek-Covington-Resume.pdf" | grep -E 'HTTP/[0-9.]+ 200' >/dev/null
+          curl -fsSI "$URL/pdfs/Russell-Dudek-Covington-Cover-Letter.pdf" | grep -E 'HTTP/[0-9.]+ 200' >/dev/null
+
+      - name: Record live verification and remove one-time verifier
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json, hashlib, datetime
+          Path('covington-ai/live-status.json').write_text(json.dumps({
+            'live_url': 'https://russelldudek.github.io/DeepHow/covington-ai/',
+            'source_campaign_commit': 'ad226138732728144e02eaa36d7e3e66a51c2db5',
+            'pages_source_commit': '${{ github.sha }}',
+            'verification_outcome': 'success',
+            'homepage_signature': True,
+            'stylesheet_signature': True,
+            'interaction_signature': True,
+            'document_routes': 'passed',
+            'pdf_routes': 'passed',
+            'live_index_sha256': hashlib.sha256(Path('/tmp/index.html').read_bytes()).hexdigest(),
+            'verified_at_utc': datetime.datetime.now(datetime.timezone.utc).isoformat()
+          }, indent=2) + '\n')
+          PY
+          rm -f .github/workflows/verify-covington-static.yml .covington-static-verify
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Record verified Covington static Pages publication'
+          git push
